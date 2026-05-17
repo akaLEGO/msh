@@ -146,11 +146,10 @@ function Section({ theme, en, th, gold, children }) {
 
 // ── Shop ─────────────────────────────────────────────────────────
 
-function ShopScreen({ theme, flowerKey, onBack, onShare }) {
+function ShopScreen({ theme, flowerKey, onBack, onShare, onCheckout }) {
   const f = FLOWERS[flowerKey];
   const [picked, setPicked] = useState2("bouquet");
   const [isGift, setIsGift] = useState2(false);
-  const [added, setAdded] = useState2(false);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
@@ -255,8 +254,8 @@ function ShopScreen({ theme, flowerKey, onBack, onShare }) {
             <span style={{ fontFamily: theme.thaiFont }}>ส่งฟรีในกรุงเทพ</span>
           </div>
         </div>
-        <PrimaryBtn theme={theme} full onClick={() => { setAdded(true); setTimeout(() => setAdded(false), 2200); }}>
-          {added ? "Added to basket · เพิ่มในตะกร้าแล้ว ✓" : "Add to basket · ใส่ตะกร้า"}
+        <PrimaryBtn theme={theme} full onClick={() => onCheckout && onCheckout({ product: picked, isGift })}>
+          Checkout · ดำเนินการสั่งซื้อ →
         </PrimaryBtn>
       </div>
     </div>
@@ -405,4 +404,239 @@ function ShareScreen({ theme, flowerKey, onBack }) {
   );
 }
 
-Object.assign(window, { LoreScreen, ShopScreen, ShareScreen, Section });
+// ── Checkout · contact-based order completion ────────────────────
+// Florist takes orders via LINE, not a card-charging checkout.
+// This screen summarises the order and routes to LINE / Instagram / map.
+
+const MSH_CONTACT = {
+  lineId: "@ms.h.florist",
+  lineUrl: "https://line.me/R/ti/p/%40ms.h.florist",
+  ig: "ms.h_flowerhouse",
+  igUrl: "https://www.instagram.com/ms.h_flowerhouse/",
+  city_en: "Bangkok",
+  city_th: "กรุงเทพฯ",
+};
+
+function CheckoutScreen({ theme, flowerKey, order, onBack }) {
+  const f = FLOWERS[flowerKey];
+  const p = PRODUCTS[order?.product || "bouquet"];
+  const isGift = !!order?.isGift;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+      {theme.stars && <StarField count={Math.floor(theme.starDensity * 0.5)} color={theme.starColor} w={400} h={800} seed={31} />}
+
+      <Header theme={theme} onBack={onBack} />
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", position: "relative", zIndex: 2 }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontFamily: theme.bodyFont, fontSize: 11, color: theme.inkMuted, letterSpacing: 1.5, textTransform: "uppercase" }}>
+            Almost yours · ใกล้ได้แล้ว
+          </div>
+          <div style={{ fontFamily: theme.titleFont, fontSize: 26, fontWeight: theme.titleWeight, color: theme.ink, marginTop: 4, letterSpacing: -0.4, fontStyle: "italic" }}>
+            Confirm on LINE
+          </div>
+          <div style={{ fontFamily: theme.thaiFont, fontSize: 14, color: theme.inkSoft, marginTop: 2 }}>
+            ปิดยอดสั่งซื้อทาง LINE
+          </div>
+        </div>
+
+        {/* Order summary */}
+        <div style={{
+          background: theme.card,
+          border: `1px solid ${theme.line}`,
+          borderRadius: theme.radius,
+          padding: "14px 16px",
+          boxShadow: theme.cardShadow,
+          marginBottom: 14,
+        }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <div style={{
+              width: 84, height: 84, borderRadius: theme.radius * 0.6, flexShrink: 0,
+              background: `linear-gradient(160deg, ${f.hex}, ${f.petal}66)`,
+              display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+            }}>
+              <Flower flower={flowerKey} size={68} theme={theme} animate={false} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: theme.bodyFont, fontSize: 10, color: theme.inkMuted, letterSpacing: 1.5, textTransform: "uppercase" }}>
+                Your order · รายการ
+              </div>
+              <div style={{ fontFamily: theme.titleFont, fontSize: 19, fontWeight: theme.titleWeight, color: theme.ink, fontStyle: "italic", lineHeight: 1.1, marginTop: 3 }}>
+                {p.en} <span style={{ fontFamily: theme.bodyFont, fontStyle: "normal", fontSize: 13, color: theme.inkMuted }}>· {f.en}</span>
+              </div>
+              <div style={{ fontFamily: theme.thaiFont, fontSize: 12.5, color: theme.inkSoft, marginTop: 2 }}>
+                {p.th} · ดอก{f.th}
+              </div>
+              <div style={{ fontFamily: theme.bodyFont, fontSize: 11, color: theme.inkMuted, marginTop: 4 }}>
+                {p.sub_en}
+              </div>
+            </div>
+          </div>
+          <div style={{ height: 1, background: theme.line, margin: "12px 0" }} />
+          <Row label_en="Subtotal" label_th="ราคา" value={`฿${p.price.toLocaleString()}`} theme={theme} />
+          <Row label_en="Gift wrap + card" label_th="ห่อของขวัญ + การ์ด" value={isGift ? "Included" : "—"} muted={!isGift} theme={theme} />
+          <Row label_en="Delivery (BKK)" label_th="จัดส่งในกรุงเทพฯ" value="Free" theme={theme} />
+          <div style={{ height: 1, background: theme.line, margin: "10px 0" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div>
+              <div style={{ fontFamily: theme.bodyFont, fontSize: 11, color: theme.inkMuted, textTransform: "uppercase", letterSpacing: 1 }}>Total · รวม</div>
+            </div>
+            <div style={{ fontFamily: theme.titleFont, fontSize: 24, color: theme.ink, fontWeight: 600 }}>
+              ฿{p.price.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* How it works */}
+        <div style={{
+          padding: "12px 14px",
+          background: `${theme.accent2 || theme.accent}10`,
+          border: `1px dashed ${theme.accent2 || theme.accent}55`,
+          borderRadius: theme.radius * 0.6,
+          marginBottom: 16,
+        }}>
+          <div style={{ fontFamily: theme.bodyFont, fontSize: 11, color: theme.inkMuted, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600 }}>
+            How to order · ขั้นตอน
+          </div>
+          <div style={{ fontFamily: theme.titleFont, fontSize: 14, color: theme.ink, fontStyle: "italic", marginTop: 6, lineHeight: 1.45 }}>
+            Tap "Order on LINE" — we'll confirm the bouquet, schedule delivery, and send a QR for payment.
+          </div>
+          <div style={{ fontFamily: theme.thaiFont, fontSize: 12.5, color: theme.inkSoft, marginTop: 4, lineHeight: 1.55 }}>
+            กดปุ่ม "สั่งซื้อทาง LINE" — เราจะคอนเฟิร์มช่อ นัดเวลาส่ง และส่ง QR ให้โอนเงินค่ะ
+          </div>
+        </div>
+
+        {/* From our shop · IG */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
+            <div>
+              <div style={{ fontFamily: theme.bodyFont, fontSize: 10, color: theme.inkMuted, letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>
+                From our shop · จากร้าน
+              </div>
+              <div style={{ fontFamily: theme.thaiFont, fontSize: 11, color: theme.inkMuted, marginTop: 2 }}>
+                @{MSH_CONTACT.ig}
+              </div>
+            </div>
+            <a href={MSH_CONTACT.igUrl} target="_blank" rel="noopener noreferrer" style={{
+              fontFamily: theme.bodyFont, fontSize: 11, color: theme.accent2 || theme.accent, fontWeight: 600, textDecoration: "none",
+            }}>
+              See all →
+            </a>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+            {[flowerKey, ...FLOWER_KEYS.filter((k) => k !== flowerKey).slice(0, 3)].map((k) => {
+              const ff = FLOWERS[k];
+              return (
+                <a key={k} href={MSH_CONTACT.igUrl} target="_blank" rel="noopener noreferrer" style={{
+                  aspectRatio: "1 / 1",
+                  background: `linear-gradient(160deg, ${ff.hex}, ${ff.petal}66)`,
+                  borderRadius: theme.radius * 0.5,
+                  border: `1px solid ${theme.line}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  overflow: "hidden", textDecoration: "none",
+                }}>
+                  <Flower flower={k} size={56} theme={theme} animate={false} />
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Contact card */}
+        <div style={{
+          padding: "12px 14px",
+          background: theme.card,
+          border: `1px solid ${theme.line}`,
+          borderRadius: theme.radius * 0.6,
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
+          <ContactRow theme={theme} icon="📍" en={`${MSH_CONTACT.city_en} · pickup or delivery`} th={`${MSH_CONTACT.city_th} · มารับเองหรือส่งถึงที่`} />
+          <div style={{ height: 1, background: theme.line }} />
+          <ContactRow theme={theme} icon="💌" en={`LINE ${MSH_CONTACT.lineId}`} th="แอดไลน์มาสั่งได้เลย" link={MSH_CONTACT.lineUrl} />
+          <div style={{ height: 1, background: theme.line }} />
+          <ContactRow theme={theme} icon="📷" en={`Instagram @${MSH_CONTACT.ig}`} th="ดูช่อจริงจาก IG" link={MSH_CONTACT.igUrl} />
+        </div>
+      </div>
+
+      {/* Sticky CTA */}
+      <div style={{ padding: "12px 24px 40px", display: "flex", flexDirection: "column", gap: 8, background: `linear-gradient(to top, ${theme.bg} 80%, ${theme.bg}00)`, position: "relative", zIndex: 2 }}>
+        <a href={MSH_CONTACT.lineUrl} target="_blank" rel="noopener noreferrer" style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          width: "100%", padding: "16px 24px",
+          borderRadius: theme.pillRadius,
+          background: "#06C755",
+          color: "#fff", textDecoration: "none",
+          fontFamily: theme.bodyFont, fontSize: 14, fontWeight: 600, letterSpacing: 0.3,
+          boxShadow: theme.cardShadow,
+        }}>
+          <LineIcon size={18} />
+          Order on LINE · สั่งทาง LINE
+        </a>
+        <a href={MSH_CONTACT.igUrl} target="_blank" rel="noopener noreferrer" style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          width: "100%", padding: "12px 22px",
+          borderRadius: theme.pillRadius,
+          background: "transparent",
+          color: theme.ink, textDecoration: "none",
+          border: `1px solid ${theme.line}`,
+          fontFamily: theme.bodyFont, fontSize: 13, fontWeight: 500,
+        }}>
+          DM us on Instagram · ทักทาง IG
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label_en, label_th, value, muted, theme }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 6 }}>
+      <div>
+        <div style={{ fontFamily: theme.bodyFont, fontSize: 12.5, color: theme.inkSoft }}>{label_en}</div>
+        <div style={{ fontFamily: theme.thaiFont, fontSize: 11, color: theme.inkMuted }}>{label_th}</div>
+      </div>
+      <div style={{ fontFamily: theme.bodyFont, fontSize: 13, color: muted ? theme.inkMuted : theme.ink, fontWeight: muted ? 400 : 500 }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function ContactRow({ theme, icon, en, th, link }) {
+  const body = (
+    <>
+      <div style={{ fontSize: 18, width: 26, textAlign: "center", flexShrink: 0 }}>{icon}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: theme.bodyFont, fontSize: 13, color: theme.ink, fontWeight: 500 }}>{en}</div>
+        <div style={{ fontFamily: theme.thaiFont, fontSize: 11.5, color: theme.inkSoft }}>{th}</div>
+      </div>
+      {link && <div style={{ color: theme.accent2 || theme.accent, fontSize: 16 }}>›</div>}
+    </>
+  );
+  if (link) {
+    return (
+      <a href={link} target="_blank" rel="noopener noreferrer" style={{
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "4px 0", textDecoration: "none", color: "inherit",
+      }}>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 0" }}>
+      {body}
+    </div>
+  );
+}
+
+function LineIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff">
+      <path d="M19.365 9.863a.629.629 0 110 1.257h-1.755v1.126h1.755a.629.629 0 110 1.257h-2.384a.628.628 0 01-.628-.628V8.108c0-.346.282-.629.628-.629h2.384a.629.629 0 110 1.258h-1.755v1.126h1.755zm-3.855 3.012a.629.629 0 01-1.131.379l-2.443-3.328v3.077a.629.629 0 01-1.257 0V8.108a.628.628 0 01.628-.629c.196 0 .379.097.494.244l2.452 3.339V8.108a.629.629 0 011.257 0v4.767zm-5.741 0a.629.629 0 11-1.258 0V8.108a.629.629 0 111.258 0v4.767zm-2.512 0a.628.628 0 01-.628.628H4.245a.628.628 0 01-.628-.628V8.108a.629.629 0 111.257 0v4.139h1.755a.628.628 0 01.628.628zM24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.815 4.271 8.846 10.04 9.612.391.084.923.258 1.058.592.122.302.08.776.039 1.083l-.171 1.025c-.053.302-.241 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967C23.165 14.347 24 12.434 24 10.314"/>
+    </svg>
+  );
+}
+
+Object.assign(window, { LoreScreen, ShopScreen, ShareScreen, CheckoutScreen, Section, MSH_CONTACT });

@@ -6,6 +6,7 @@ function FlowerApp({ theme }) {
   const [screen, setScreen] = useStateA("welcome");
   const [pathId, setPathId] = useStateA(null);
   const [flower, setFlower] = useStateA(null);
+  const [order, setOrder] = useStateA(null);
 
   const go = (s) => setScreen(s);
 
@@ -67,7 +68,11 @@ function FlowerApp({ theme }) {
         onBack={() => go("welcome")} />}
 
       {screen === "shop" && flower && <ShopScreen theme={theme} flowerKey={flower}
-        onBack={() => go("lore")} onShare={() => go("share")} />}
+        onBack={() => go("lore")} onShare={() => go("share")}
+        onCheckout={(o) => { setOrder(o); go("checkout"); }} />}
+
+      {screen === "checkout" && flower && <CheckoutScreen theme={theme} flowerKey={flower}
+        order={order} onBack={() => go("shop")} />}
 
       {screen === "share" && flower && <ShareScreen theme={theme} flowerKey={flower}
         onBack={() => go("lore")} />}
