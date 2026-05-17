@@ -216,20 +216,43 @@ function WelcomeScreen({ theme, onStartQuiz, onPickFlower }) {
         </div>
       </div>
 
+      {/* Primary CTA — Find my match */}
+      <div style={{ padding: "14px 22px 4px", position: "relative", zIndex: 3 }}>
+        <button onClick={onStartQuiz} style={{
+          width: "100%",
+          padding: "15px 22px",
+          borderRadius: theme.pillRadius,
+          background: theme.accent2 || theme.buttonBg,
+          color: "#fff",
+          border: "none",
+          cursor: "pointer",
+          fontFamily: theme.bodyFont,
+          fontSize: 14,
+          fontWeight: 600,
+          letterSpacing: 0.3,
+          boxShadow: `0 8px 24px ${(theme.accent2 || theme.buttonBg)}33, ${theme.cardShadow}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          transition: "transform .15s, box-shadow .15s",
+        }}
+          onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.98)"}
+          onMouseUp={(e) => e.currentTarget.style.transform = ""}
+          onMouseLeave={(e) => e.currentTarget.style.transform = ""}
+        >
+          <span style={{ fontFamily: theme.titleFont, fontStyle: "italic", fontSize: 16, fontWeight: 500 }}>Find my match</span>
+          <span style={{ fontFamily: theme.thaiFont, fontSize: 13, fontWeight: 500, opacity: 0.85 }}>· หาดอกของฉัน</span>
+          <span style={{ fontSize: 15, marginLeft: 2 }}>→</span>
+        </button>
+      </div>
+
       {/* Flower carousel — pick by sight */}
-      <div style={{ padding: "16px 0 0", position: "relative", zIndex: 3 }}>
-        <div style={{ padding: "0 24px 8px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontFamily: theme.bodyFont, fontSize: 10, color: theme.inkMuted, letterSpacing: 2, textTransform: "uppercase" }}>
-              Pick by sight · เลือกตามใจ
-            </div>
+      <div style={{ padding: "10px 0 0", position: "relative", zIndex: 3 }}>
+        <div style={{ padding: "0 24px 6px" }}>
+          <div style={{ fontFamily: theme.bodyFont, fontSize: 10, color: theme.inkMuted, letterSpacing: 2, textTransform: "uppercase" }}>
+            Or pick by sight · เลือกตามใจ
           </div>
-          <button onClick={onStartQuiz} style={{
-            background: "none", border: "none", cursor: "pointer",
-            fontFamily: theme.bodyFont, fontSize: 11, color: theme.accent2 || theme.accent, fontWeight: 600,
-          }}>
-            Find my match →
-          </button>
         </div>
         <div className="phone-scroll" style={{ display: "flex", gap: 10, overflowX: "auto", padding: "4px 24px 16px", scrollSnapType: "x mandatory" }}>
           {allFlowers.map((k) => {
