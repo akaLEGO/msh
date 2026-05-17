@@ -36,7 +36,8 @@ function FlowerApp({ theme }) {
       color: theme.ink,
       position: "relative",
       overflow: "hidden",
-      paddingTop: 54,
+      paddingTop: "max(env(safe-area-inset-top), 12px)",
+      paddingBottom: "env(safe-area-inset-bottom)",
     }}>
       <FlowerDefs />
 
